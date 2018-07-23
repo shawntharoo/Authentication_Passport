@@ -1,6 +1,7 @@
 var express = require('express');
 var router = express.Router();
 var passport = require('passport');
+var profile = require('./profile');
 
 router.post('/signup', passport.authenticate('local-signup', {
     successRedirect : '/auth/profile',
@@ -12,9 +13,7 @@ router.post('/login', passport.authenticate('local-login', {
     failureRedirect : 'auth/login'
 }));
 
-router.get('/profile', isLoggedIn, (req, res) => {
-res.status(200).json(req.user);
-})
+router.get('/profile', isLoggedIn, profile.profile)
 
 router.get('/logout', isLoggedIn, (req, res) => {
     req.logout();
@@ -22,6 +21,7 @@ router.get('/logout', isLoggedIn, (req, res) => {
         'message' : 'successfully logout'
     });
 });
+
 
 module.exports = router;
 
