@@ -1,3 +1,4 @@
+var con = require('../../config/database');
 /**
  * User Profile
  *

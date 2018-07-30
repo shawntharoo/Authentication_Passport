@@ -17,10 +17,8 @@
     "dotenv": "^5.0.1",
     "dotenv-safe": "^4.0.4",
     "express-mysql-session": "^2.0.0",
-    "http-server": "^0.11.1",
     "mysql": "^2.16.0",
     "nodemon": "^1.11.0",
-    "qs": "^6.3.0",
-    "request": "^2.76.0"
+    "connect-flash": "^0.1.1"
   }
 }

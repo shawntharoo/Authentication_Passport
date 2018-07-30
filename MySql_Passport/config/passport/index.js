@@ -1,16 +1,17 @@
 var LocalStrategy = require('passport-local').Strategy;
 var User = require('../../models/user');
 var bcrypt = require('bcrypt-nodejs');
+var con = require('../database');
 
 var myLocalConfig = (passport) => {
     passport.serializeUser(function (user, done) {
-        done(null, user.id);
+        done(null, user.idusers);
     });
 
     passport.deserializeUser(function (id, done) {
-        User.findById(id, function (err, user) {
-            done(err, user);
-        });
+        con.query("select * from users where idusers = "+id,function(err,rows){	
+			done(err, rows[0]);
+		});
     });
 
     passport.use('local-login', new LocalStrategy({
@@ -18,24 +19,23 @@ var myLocalConfig = (passport) => {
         passwordField: 'password',
         passReqToCallback: true
     },
-        function (req, email, password, done) {
-            if (email)
-                email = email.toLowerCase();
-            process.nextTick(function () {
-                User.findOne({ 'local.email': email }, function (err, user) {
-                    if (err)
-                        return done(err);
+    function(req, email, password, done) { // callback with email and password from our form
 
-                    if (!user)
-                        return done(null, false);
-
-                    if (!this.validPassword(password,'User.local.password'))
-                        return done(null, false);
-
-                    else
-                        return done(null, user);
-                });
-            });
+        con.query("SELECT * FROM `users` WHERE `email` = '" + email + "'",function(err,rows){
+			if (err)
+                return done(err);
+			 if (rows.length == 0) {
+                return done(null, false, req.flash('loginMessage', 'No user found.')); // req.flash is the way to set flashdata using connect-flash
+            } 
+			
+			// if the user is found but the password is wrong
+            if (!validPassword(rows[0].password, password))
+                return done(null, false, req.flash('loginMessage', 'Oops! Wrong password.')); // create the loginMessage and save it to session as flashdata
+			
+            // all is well, return successful user
+            return done(null, rows[0]);			
+		
+		});
         }));
 
     passport.use('local-signup', new LocalStrategy({
@@ -43,58 +43,35 @@ var myLocalConfig = (passport) => {
         passwordField: 'password',
         passReqToCallback: true
     },
-        function (req, email, password, done) {
-            if (email)
-                email = email.toLowerCase();
-            process.nextTick(function () {
-                if (!req.user) {
-                    User.findOne({ 'local.email': email }, function (err, user) {
-                        if (err)
-                            return done(err);
+    function(req, email, password, done) {
 
-                        if (user) {
-                            return done(null, false)
-                        } else {
-                            var newUser = new User();
-                            newUser.local.email = email;
-                            newUser.local.password = this.generateHash(password);
-                            newUser.fname = req.body.fname
-                            newUser.lname = req.body.lname;
-                            newUser.save(function (err) {
-                                if (err)
-                                    return done(err);
+		// find a user whose email is the same as the forms email
+		// we are checking to see if the user trying to login already exists
+        con.query("select * from users where email = '"+email+"'",function(err,rows){
+			console.log(rows);
+			console.log("above row object");
+			if (err)
+                return done(err);
+			 if (rows.length) {
+                return done(null, false, req.flash('signupMessage', 'That email is already taken.'));
+            } else {
 
-                                return done(null, newUser);
-                            });
-                        }
-
-                    });
-
-                } else if (!req.user.local.email) {
-                    User.findOne({ 'local.email': email }, function (err, user) {
-                        if (err)
-                            return done(err);
-
-                        if (user) {
-                            return done(nul, false);
-                        } else {
-                            var user = req.user;
-                            user.local.email = email;
-                            user.local.password = this.generateHash(password);
-                            user.fname = req.body.fname;
-                            user.lname = req.body.lname;
-                            user.save(function (err) {
-                                if (err)
-                                    return done(err);
-
-                                return done(null, user);
-                            })
-                        }
-                    })
-                } else {
-                    return done(null, req.user);
-                }
-            })
+				// if there is no user with that email
+                // create the user
+                var newUserMysql = new Object();
+				
+				newUserMysql.email    = email;
+                newUserMysql.password = generateHash(password); // use the generateHash function in our user model
+			
+				var insertQuery = "INSERT INTO users ( email, password ) values ('" + newUserMysql.email +"','"+ newUserMysql.password +"')";
+					console.log(insertQuery);
+                    con.query(insertQuery,function(err,rows){
+				newUserMysql.idusers = rows.insertId;
+				
+				return done(null, newUserMysql);
+				});	
+            }	
+		});
         }))
 }
 
@@ -103,7 +80,7 @@ generateHash = function (password){
 }
 
 validPassword = function (password, local_password){
-    return bcrypt.compareSync(password, local_password);
+    return bcrypt.compareSync(local_password, password);
 }
 
 module.exports = myLocalConfig;

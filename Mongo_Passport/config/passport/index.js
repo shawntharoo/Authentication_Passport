@@ -25,7 +25,7 @@ var myLocalConfig = (passport) => {
                         return done(err);
 
                     if (!user)
-                        return done(null, false);
+                        return done(null, false, req.flash('loginMessage', 'No user found.'));
 
                     if (!user.validPassword(password))
                         return done(null, false);
@@ -51,7 +51,7 @@ var myLocalConfig = (passport) => {
                             return done(err);
 
                         if (user) {
-                            return done(null, false)
+                            return done(null, false, req.flash('signupMessage', 'That username is already taken.'))
                         } else {
                             var newUser = new User();
                             newUser.local.email = email;

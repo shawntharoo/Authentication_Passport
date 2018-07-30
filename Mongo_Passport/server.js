@@ -10,7 +10,7 @@ var bodyParser = require('body-parser');
 var session = require('express-session');
 
 var authRoutes = require('./routes/auth');
-var testRotes = require('./routes/test');
+var testRoutes = require('./routes/test');
 var configDB = require('./config/database');
 
 mongoose.connect(configDB.url);
@@ -32,7 +32,7 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 app.use('/auth', authRoutes);
-app.use('/test', testRotes);
+app.use('/test', testRoutes);
 
 app.listen(port);
 console.log('The maggic happens on port ' + port);

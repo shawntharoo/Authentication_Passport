@@ -1,5 +1,6 @@
 var express = require('express');
 var router = express.Router();
+var con = require('../../config/database');
 
 router.get('/guest', (req, res) => {
     res.status(200).json({
